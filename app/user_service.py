@@ -6,7 +6,7 @@ from flask import *
 # from app.Article import get_today_article, load_freq_history
 # from app.WordFreq import WordFreq
 # from app.wordfreqCMD import sort_in_descending_order
-
+import os
 import Yaml
 from Article import get_today_article, load_freq_history
 from WordFreq import WordFreq
@@ -20,6 +20,21 @@ userService = Blueprint("user_bp", __name__)
 
 path_prefix = '/var/www/wordfreq/wordfreq/'
 path_prefix = './'  # comment this line in deployment
+
+def save_word_to_file(word):
+    file_path = 'simple.txt'
+    print(f"Attempting to save word: {word}")
+    try:
+        if not os.path.exists(file_path):
+            with open(file_path, 'w') as f:
+                f.write(word + '\n')
+            print(f"File {file_path} created and word added: {word}")
+        else:
+            with open(file_path, 'a') as f:
+                f.write(word + '\n')
+            print(f"Word added to existing file {file_path}: {word}")
+    except Exception as e:
+        print(f"Error saving word to file: {e}")
 
 @userService.route("/get_next_article/<username>",methods=['GET','POST'])
 def get_next_article(username):
@@ -74,6 +89,7 @@ def unfamiliar(username, word):
     pickle_idea.unfamiliar(user_freq_record, word)
     session['thisWord'] = word  # 1. put a word into session
     session['time'] = 1
+    save_word_to_file(word)
     return "success"
 
 
@@ -89,6 +105,7 @@ def familiar(username, word):
     pickle_idea.familiar(user_freq_record, word)
     session['thisWord'] = word  # 1. put a word into session
     session['time'] = 1
+    save_word_to_file(word)
     return "success"
 
 
@@ -175,6 +192,7 @@ def user_mark_word(username):
         lst = []
         for word in request.form.getlist('marked'):
             lst.append((word, [get_time()]))
+            save_word_to_file(word)
         d = pickle_idea2.merge_frequency(lst, lst_history)
         pickle_idea2.save_frequency_to_pickle(d, user_freq_record)
         return redirect(url_for('user_bp.userpage', username=username))
